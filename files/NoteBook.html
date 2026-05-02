@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>PTOM — Digital NoteBook</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Outfit:wght@300;400;500;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{--ink:#0a0a0f;--cream:#faf8f4;--surface:#fff;--surface2:#f4f1ec;--red:#d4372a;--gold:#c8902a;--border:rgba(10,10,15,0.1);--muted:rgba(10,10,15,0.42);--shadow:0 2px 12px rgba(10,10,15,0.07);--line:#e0ddd8}
+    body{min-height:100vh;background:#e8e4de;color:var(--ink);font-family:'Outfit',sans-serif;display:flex;flex-direction:column}
+
+    /* TOPBAR */
+    .topbar{position:sticky;top:0;z-index:100;background:rgba(250,248,244,0.92);backdrop-filter:blur(16px);border-bottom:1px solid var(--border);height:60px;padding:0 24px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .logo{display:flex;align-items:center;gap:9px;text-decoration:none;flex-shrink:0}
+    .logo-mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--red),var(--gold));display:flex;align-items:center;justify-content:center;font-family:'Cormorant Garamond',serif;font-weight:700;font-size:13px;color:#fff}
+    .logo-name{font-family:'Cormorant Garamond',serif;font-size:1.15rem;font-weight:700;color:var(--ink)}
+    .logo-name span{color:var(--gold)}
+    .toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+    .tool-btn{background:var(--surface);border:1px solid var(--border);border-radius:7px;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.78rem;color:var(--ink);transition:all 0.15s;flex-shrink:0}
+    .tool-btn:hover{background:var(--surface2);border-color:rgba(10,10,15,0.2)}
+    .tool-btn.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+    .tool-select{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-family:'Outfit',sans-serif;font-size:0.75rem;color:var(--ink);outline:none;cursor:pointer;height:32px}
+    .tool-color{width:32px;height:32px;border-radius:7px;border:1px solid var(--border);cursor:pointer;padding:2px;overflow:hidden;flex-shrink:0}
+    .tool-color input{width:100%;height:100%;border:none;cursor:pointer;border-radius:5px;padding:0}
+    .tool-sep{width:1px;height:24px;background:var(--border);flex-shrink:0;margin:0 2px}
+    .topbar-r{display:flex;align-items:center;gap:8px;flex-shrink:0}
+    .nav-btn{background:var(--surface);border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-size:0.75rem;font-weight:500;color:var(--ink);cursor:pointer;font-family:'Outfit',sans-serif;transition:all 0.15s;display:flex;align-items:center;gap:5px}
+    .nav-btn:hover{background:var(--surface2)}
+    .nav-btn:disabled{opacity:0.4;cursor:not-allowed}
+    .page-info{font-size:0.75rem;color:var(--muted);font-weight:500;white-space:nowrap;min-width:60px;text-align:center}
+    .save-btn{background:var(--ink);border:none;border-radius:7px;padding:6px 14px;font-size:0.75rem;font-weight:600;color:#fff;cursor:pointer;font-family:'Outfit',sans-serif;transition:all 0.15s;display:flex;align-items:center;gap:5px}
+    .save-btn:hover{background:#1c1c28}
+    .back-link{display:flex;align-items:center;gap:5px;text-decoration:none;font-size:0.75rem;font-weight:500;color:var(--muted);border:1px solid var(--border);border-radius:7px;padding:6px 10px;transition:all 0.15s}
+    .back-link:hover{color:var(--ink);background:var(--surface2)}
+
+    /* NOTEBOOK AREA */
+    .nb-wrap{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:32px 20px 40px;gap:24px;overflow-y:auto}
+ 
+    .notebook{
+      width:210mm;max-width:100%;
+      background:var(--surface);
+      border-radius:4px;
+      box-shadow:0 4px 40px rgba(10,10,15,0.18),0 1px 3px rgba(10,10,15,0.12);
+      position:relative;overflow:hidden;
+      display:flex;flex-direction:column;
+      min-height:297mm;
+    }
+
+    /* Spiral binding */
+    .spiral{position:absolute;top:0;bottom:0;left:0;width:52px;z-index:10;background:var(--surface2);border-right:1px solid var(--line)}
+    .spiral::before{content:'';position:absolute;top:0;right:-1px;bottom:0;width:2px;background:linear-gradient(to bottom,transparent,rgba(212,55,42,0.35) 30%,rgba(212,55,42,0.35) 70%,transparent)}
+    .ring{position:absolute;left:10px;width:20px;height:20px;border-radius:50%;background:transparent;border:3px solid #888;box-shadow:inset 0 1px 3px rgba(0,0,0,0.2)}
+
+    /* Page content area */
+    .page-area{margin-left:52px;flex:1;display:flex;flex-direction:column;padding:20px 30px 20px 20px;position:relative;
+      background-image:repeating-linear-gradient(0deg,transparent,transparent 28px,var(--line) 28px,var(--line) 29px);
+      background-position:0 48px;
+    }
+
+    /* Red margin line */
+    .page-area::before{content:'';position:absolute;left:36px;top:0;bottom:0;width:1px;background:rgba(212,55,42,0.35)}
+
+    .nb-header{display:flex;align-items:flex-start;justify-content:space-between;padding-left:18px;margin-bottom:16px;height:48px;align-items:center}
+    .nb-title{font-family:'Cormorant Garamond',serif;font-size:1.4rem;font-weight:700;color:var(--ink);border:none;outline:none;background:transparent;width:260px;border-bottom:1px dashed var(--line);padding-bottom:2px;font-size:1.2rem}
+    .nb-title::placeholder{color:rgba(10,10,15,0.2)}
+    .nb-meta{display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:0.75rem;color:var(--muted)}
+    .nb-meta input{border:none;border-bottom:1px dashed var(--line);background:transparent;font-size:0.75rem;color:var(--ink);outline:none;text-align:right;font-family:'Outfit',sans-serif;width:120px}
+
+    .nb-content{
+      flex:1;padding-left:18px;padding-top:4px;
+      font-family:'Crimson Text',serif;font-size:1.05rem;line-height:29px;
+      color:var(--ink);outline:none;min-height:480px;
+      white-space:pre-wrap;overflow-y:auto;
+    }
+    .nb-content:empty::before{content:attr(data-placeholder);color:rgba(10,10,15,0.2);pointer-events:none}
+
+    .nb-footer{display:flex;align-items:center;justify-content:center;padding:10px 0 14px;border-top:1px solid var(--line);margin-top:8px}
+    .page-num{font-family:'Cormorant Garamond',serif;font-size:0.9rem;color:var(--muted)}
+
+    /* Sidebar pages panel */
+    .pages-panel{width:180px;flex-shrink:0}
+    .pages-title{font-size:0.7rem;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+    .page-thumb{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;margin-bottom:8px;transition:all 0.2s;position:relative}
+    .page-thumb.active{border-color:var(--red);box-shadow:0 0 0 2px rgba(212,55,42,0.12)}
+    .page-thumb:hover:not(.active){border-color:rgba(10,10,15,0.2)}
+    .thumb-num{font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:700;color:var(--red)}
+    .thumb-title{font-size:0.72rem;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .add-page{background:transparent;border:1px dashed var(--border);border-radius:8px;padding:10px 12px;cursor:pointer;width:100%;font-family:'Outfit',sans-serif;font-size:0.75rem;color:var(--muted);transition:all 0.2s;text-align:left}
+    .add-page:hover{border-color:var(--red);color:var(--red)}
+
+    /* Toast */
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;border-radius:10px;padding:10px 20px;font-size:0.82rem;font-weight:500;opacity:0;transition:all 0.3s;pointer-events:none;z-index:999;white-space:nowrap}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    @media(max-width:900px){.pages-panel{display:none}}
+    @media(max-width:600px){
+      .nb-wrap{padding:16px 8px 32px}
+      .notebook{min-height:auto}
+      .toolbar .tool-btn:nth-child(n+8){display:none}
+    }
+  </style>
+</head>
+<body>
+<script>if(localStorage.getItem('isLoggedIn')!=='true'){window.location.href='Login_Page.html'}</script>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div style="display:flex;align-items:center;gap:10px">
+    <a class="back-link" href="ptomhomepage.html">← Home</a>
+    <a class="logo" href="#"><div class="logo-mark">P</div><div class="logo-name">Note<span>Book</span></div></a>
+  </div>
+
+  <div class="toolbar" id="toolbar">
+    <select class="tool-select" id="fontSel" onchange="fmt('fontName',this.value)">
+      <option value="Crimson Text">Crimson Text</option>
+      <option value="Arial">Arial</option>
+      <option value="Georgia">Georgia</option>
+      <option value="Courier New">Courier New</option>
+      <option value="Verdana">Verdana</option>
+    </select>
+    <select class="tool-select" id="sizeSel" onchange="fmt('fontSize',this.value)">
+      <option value="2">Small</option>
+      <option value="3" selected>Normal</option>
+      <option value="4">Large</option>
+      <option value="5">X-Large</option>
+    </select>
+    <div class="tool-sep"></div>
+    <button class="tool-btn" onclick="fmt('bold')" title="Bold"><i class="fas fa-bold"></i></button>
+    <button class="tool-btn" onclick="fmt('italic')" title="Italic"><i class="fas fa-italic"></i></button>
+    <button class="tool-btn" onclick="fmt('underline')" title="Underline"><i class="fas fa-underline"></i></button>
+    <div class="tool-sep"></div>
+    <button class="tool-btn" onclick="fmt('insertUnorderedList')" title="Bullet list"><i class="fas fa-list-ul"></i></button>
+    <button class="tool-btn" onclick="fmt('insertOrderedList')" title="Numbered list"><i class="fas fa-list-ol"></i></button>
+    <div class="tool-sep"></div>
+    <div class="tool-color" title="Text colour"><input type="color" id="txtColor" value="#0a0a0f" oninput="fmt('foreColor',this.value)"/></div>
+    <div class="tool-color" title="Highlight"><input type="color" id="hlColor" value="#ffff99" oninput="fmt('hiliteColor',this.value)"/></div>
+    <div class="tool-sep"></div>
+    <button class="tool-btn" onclick="fmt('undo')" title="Undo"><i class="fas fa-undo"></i></button>
+    <button class="tool-btn" onclick="fmt('redo')" title="Redo"><i class="fas fa-redo"></i></button>
+  </div>
+
+  <div class="topbar-r">
+    <button class="nav-btn" id="prevBtn" onclick="goPage(-1)" disabled>← Prev</button>
+    <span class="page-info" id="pageInfo">1 / 1</span>
+    <button class="nav-btn" id="nextBtn" onclick="goPage(1)">Next →</button>
+    <button class="save-btn" onclick="savePage()">💾 Save</button>
+  </div>
+</header>
+
+<!-- NOTEBOOK BODY -->
+<div class="nb-wrap">
+  <!-- Pages sidebar -->
+  <div class="pages-panel">
+    <div class="pages-title">Pages</div>
+    <div id="pagesList"></div>
+    <button class="add-page" onclick="addPage()">+ Add page</button>
+  </div>
+
+  <!-- Notebook -->
+  <div class="notebook" id="notebook">
+    <!-- Spiral rings -->
+    <div class="spiral" id="spiralEl"></div>
+
+    <div class="page-area">
+      <div class="nb-header">
+        <input class="nb-title" type="text" id="pageTitle" placeholder="Page title…"/>
+        <div class="nb-meta">
+          <span>Date <input type="date" id="dateInp"/></span>
+          <span>Day  <input type="text" id="dayInp" readonly style="width:80px"/></span>
+        </div>
+      </div>
+      <div class="nb-content" id="nbContent" contenteditable="true" spellcheck="false" data-placeholder="Start writing here…"></div>
+      <div class="nb-footer"><span class="page-num" id="pageNumDisplay">1</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // Init date
+  const dateInp = document.getElementById('dateInp');
+  const dayInp  = document.getElementById('dayInp');
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  function setDate(d) {
+    const dt = d ? new Date(d+'T12:00:00') : new Date();
+    dateInp.value = dt.toISOString().split('T')[0];
+    dayInp.value  = days[dt.getDay()];
+  }
+  setDate();
+  dateInp.addEventListener('change', () => setDate(dateInp.value));
+
+  // Spiral rings
+  const spiral = document.getElementById('spiralEl');
+  for(let i=0;i<18;i++){
+    const r=document.createElement('div');
+    r.className='ring';
+    r.style.top=(20+i*34)+'px';
+    spiral.appendChild(r);
+  }
+
+  // Pages state
+  let pages = [{title:'',content:'',date:dateInp.value,day:dayInp.value}];
+  let cur = 0;
+
+  function renderSidebar(){
+    const list = document.getElementById('pagesList');
+    list.innerHTML = pages.map((p,i)=>`
+      <div class="page-thumb${i===cur?' active':''}" onclick="switchPage(${i})">
+        <div class="thumb-num">${i+1}</div>
+        <div class="thumb-title">${p.title||'Untitled'}</div>
+      </div>`).join('');
+  }
+
+  function saveCurrent(){
+    pages[cur] = {
+      title:   document.getElementById('pageTitle').value,
+      content: document.getElementById('nbContent').innerHTML,
+      date:    dateInp.value,
+      day:     dayInp.value
+    };
+  }
+
+  function loadPage(idx){
+    const p = pages[idx];
+    document.getElementById('pageTitle').value = p.title;
+    document.getElementById('nbContent').innerHTML = p.content;
+    dateInp.value = p.date || dateInp.value;
+    dayInp.value  = p.day  || dayInp.value;
+    document.getElementById('pageNumDisplay').textContent = idx+1;
+    document.getElementById('pageInfo').textContent = `${idx+1} / ${pages.length}`;
+    document.getElementById('prevBtn').disabled = idx===0;
+    document.getElementById('nextBtn').disabled = idx===pages.length-1;
+    renderSidebar();
+  }
+
+  function switchPage(idx){
+    saveCurrent();
+    cur = idx;
+    loadPage(idx);
+  }
+
+  function goPage(dir){
+    const next = cur+dir;
+    if(next<0||next>=pages.length) return;
+    switchPage(next);
+  }
+
+  function addPage(){
+    saveCurrent();
+    pages.push({title:'',content:'',date:dateInp.value,day:dayInp.value});
+    cur = pages.length-1;
+    loadPage(cur);
+  }
+
+  // Format
+  function fmt(cmd,val=null){
+    document.getElementById('nbContent').focus();
+    document.execCommand(cmd,false,val);
+  }
+
+  // Save to file
+  async function savePage(){
+    saveCurrent();
+    const p = pages[cur];
+    const txt = `Title: ${p.title||'Untitled'}\nDate: ${p.date}\nDay: ${p.day}\nPage: ${cur+1}\n\n${p.content.replace(/<[^>]*>/g,'')}`;
+    if('showSaveFilePicker' in window){
+      try{
+        const h = await window.showSaveFilePicker({suggestedName:`PTOM_Page_${cur+1}.txt`,types:[{description:'Text',accept:{'text/plain':['.txt']}}]});
+        const w = await h.createWritable();
+        await w.write(txt); await w.close();
+        showToast('✅ Page saved!');
+      }catch(e){if(e.name!=='AbortError')showToast('Error: '+e.message)}
+    } else {
+      const a=document.createElement('a');
+      a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
+      a.download=`PTOM_Page_${cur+1}.txt`;a.click();
+      showToast('✅ Page downloaded!');
+    }
+  }
+
+  function showToast(msg){
+    const t=document.getElementById('toast');
+    t.textContent=msg; t.classList.add('show');
+    setTimeout(()=>t.classList.remove('show'),2500);
+  }
+
+  // Init
+  renderSidebar();
+  loadPage(0);
+
+  // Auto-page on 35 lines
+  document.getElementById('nbContent').addEventListener('input',()=>{
+    const lines=(document.getElementById('nbContent').innerText||'').split(/\n/).length;
+    if(lines>=35){
+      saveCurrent();
+      if(cur===pages.length-1) pages.push({title:'',content:'',date:dateInp.value,day:dayInp.value});
+      cur++;
+      loadPage(cur);
+      showToast('📄 New page added automatically');
+    }
+  });
+
+  // Draggable toolbar not needed – it's fixed in topbar
+</script>
+</body>
+</html>
