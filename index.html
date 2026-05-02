@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>PTOM — Login</title>
+  <title>Digital Library— Login</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -91,7 +91,7 @@
     <div class="panel-bg"></div>
     <div class="panel-line"></div>
     <div class="brand">
-      <div class="brand-mark">P</div>
+      <div class="brand-mark">DL</div>
       <div class="brand-name">Your <em>school,</em><br/>one portal.</div>
       <p class="brand-sub">Digital library, smart notes, helpdesk and more — everything a student needs in one place.</p>
     </div>
@@ -100,8 +100,8 @@
   <div class="right-panel">
     <div class="card">
       <div class="mob-logo">
-        <div class="mob-mark">P</div>
-        <div class="mob-name">PTOM Portal</div>
+        <div class="mob-mark">DL</div>
+        <div class="mob-name">DL Portal</div>
       </div>
       <h1>Welcome back</h1>
       <p class="sub">Sign in to access your student portal</p>
@@ -152,7 +152,7 @@
       localStorage.setItem('userEmail', email);
       localStorage.setItem('userName', name);
       btn.textContent = 'Signing in…'; btn.classList.add('loading');
-      setTimeout(() => { window.location.href = 'ptomhomepage.html'; }, 600);
+      setTimeout(() => { window.location.href = 'DL_Homepage.html'; }, 600);
     }
   </script>
 </body>
