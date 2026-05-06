@@ -139,7 +139,7 @@
 </head>
 <body>
 
-<script>if(localStorage.getItem('isLoggedIn')!=='true'){window.location.href='Login_Page.html'}</script>
+<script>if(localStorage.getItem('isLoggedIn')!=='true'){window.location.href='index.html'}</script>
 
 <!-- ── TOPBAR ── -->
 <header class="topbar">
@@ -210,7 +210,7 @@
 </main>
 
 <footer>
-  <strong>DL™</strong>
+  <strong>DL</strong>
   <span>© 2025 DL Student Portal · All rights reserved</span>
 </footer>
 
@@ -248,7 +248,7 @@
 
   function logout(){
     ['isLoggedIn','userName','userEmail'].forEach(k=>localStorage.removeItem(k));
-    window.location.href='Login_Page.html';
+    window.location.href='index.html';
   }
 
   /* ── CHATBOT ── */
