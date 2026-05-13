@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Digital Library— Login</title>
+  <title>Digital Library — Login</title>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -72,7 +72,7 @@
       font-family:'Outfit',sans-serif;font-size:0.9rem;font-weight:600;color:#fff;letter-spacing:0.02em;
       transition:background 0.2s,transform 0.15s,box-shadow 0.2s;box-shadow:0 4px 16px rgba(10,10,15,0.2)
     }
-    .btn:hover{background:#1c1c28;transform:translateY(-1px);box-shadow:0 8px 24px rgba(10,10,15,0.28)}
+    .btn:hover:not(.loading){background:#1c1c28;transform:translateY(-1px);box-shadow:0 8px 24px rgba(10,10,15,0.28)}
     .btn:active{transform:translateY(0)}
     .btn.loading{opacity:0.6;pointer-events:none}
 
@@ -120,39 +120,102 @@
       </div>
 
       <div class="meta">
-        <label><input type="checkbox"/> Remember me</label>
+        <label><input type="checkbox" id="rememberMe"/> Remember me</label>
         <a class="forgot" href="#">Forgot password?</a>
       </div>
 
-      <div class="err" id="errMsg">⚠ Please enter a valid email and password.</div>
+      <div class="err" id="errMsg"></div>
       <button class="btn" id="loginBtn">Sign In →</button>
 
       <div class="divider">or</div>
-      <p class="reg">No account? <a href="#">Register here</a></p>
-      <div class="note">🔓 Open access — enter any valid email & password to continue</div>
+      <p class="reg">No account? <a href="register.html">Register here</a></p>
+      <div class="note">🔐 Secured with bcrypt + JWT — your password is never stored in plain text</div>
     </div>
   </div>
 
   <script>
-    const btn = document.getElementById('loginBtn');
-    btn.addEventListener('click', login);
-    document.addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+    // ╔══════════════════════════════════════════════════════════╗
+    // ║  🔧 Set this to your deployed Railway/Render backend URL ║
+    // ╚══════════════════════════════════════════════════════════╝
+    const API_URL = 'https://railway.com/project/8b0b8e6e-2149-4b98-8295-76ce06e376b5/service/f7f258fe-51b1-4cd3-9838-b60cf100c355?environmentId=4e3e79e4-3caa-4555-81d3-5529f4b62fdc&id=35f49aea-a8d5-4bf4-9bb8-615daaa95583#details'; // ← CHANGE THIS
 
-    function login() {
-      const email = document.getElementById('email').value.trim();
-      const pass  = document.getElementById('password').value;
-      const err   = document.getElementById('errMsg');
-      err.classList.remove('show');
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || pass.length < 1) {
-        err.classList.add('show'); void err.offsetWidth; return;
+    const btn    = document.getElementById('loginBtn');
+    const errMsg = document.getElementById('errMsg');
+
+    // ── Auto-redirect if already logged in ───────────────────────
+    (function checkSession() {
+      const token = localStorage.getItem('dl_token') || sessionStorage.getItem('dl_token');
+      if (token) window.location.href = 'DL_Homepage.html';
+    })();
+
+    btn.addEventListener('click', login);
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+    function showError(msg) {
+      errMsg.textContent = '⚠ ' + msg;
+      errMsg.classList.remove('show');
+      void errMsg.offsetWidth; // force reflow for shake animation
+      errMsg.classList.add('show');
+    }
+
+    function hideError() {
+      errMsg.classList.remove('show');
+    }
+
+    async function login() {
+      const email    = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const remember = document.getElementById('rememberMe').checked;
+
+      hideError();
+
+      // ── Client-side validation ──────────────────────────────────
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showError('Please enter a valid email address.'); return;
       }
-      const name = email.split('@')[0].replace(/[._\-]/g,' ')
-                   .replace(/\b\w/g, c => c.toUpperCase());
-      localStorage.setItem('isLoggedIn','true');
-      localStorage.setItem('userEmail', email);
-      localStorage.setItem('userName', name);
-      btn.textContent = 'Signing in…'; btn.classList.add('loading');
-      setTimeout(() => { window.location.href = 'DL_Homepage.html'; }, 600);
+      if (password.length < 1) {
+        showError('Please enter your password.'); return;
+      }
+
+      // ── Loading state ───────────────────────────────────────────
+      btn.textContent = 'Signing in…';
+      btn.classList.add('loading');
+
+      try {
+        const res = await fetch(`${API_URL}/api/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identifier: email, password }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          showError(data.error || 'Login failed. Please try again.');
+          btn.textContent = 'Sign In →';
+          btn.classList.remove('loading');
+          return;
+        }
+
+        // ── Success: save token + user info ─────────────────────
+        const storage = remember ? localStorage : sessionStorage;
+        storage.setItem('dl_token', data.token);
+        storage.setItem('dl_user',  JSON.stringify(data.user));
+
+        // Keep backwards-compatible keys your homepage may already use
+        storage.setItem('isLoggedIn', 'true');
+        storage.setItem('userEmail',  data.user.email);
+        storage.setItem('userName',   data.user.username);
+
+        // ── Redirect to homepage ──────────────────────────────────
+        window.location.href = 'DL_Homepage.html';
+
+      } catch (err) {
+        // Network / server unreachable
+        showError('Cannot reach the server. Check your connection or try again later.');
+        btn.textContent = 'Sign In →';
+        btn.classList.remove('loading');
+      }
     }
   </script>
 </body>
