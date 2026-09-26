@@ -136,10 +136,13 @@
     @media(max-width:540px){.user-name{max-width:80px}.topbar-r{gap:8px}}
     @media(max-width:480px){.tiles{grid-template-columns:1fr 1fr}.stats{grid-template-columns:1fr}}
   </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth.js"></script>
 </head>
 <body>
 
-<script>if(localStorage.getItem('isLoggedIn')!=='true'){window.location.href='index.html'}</script>
+<script>DLAuth.requireAuth();</script>
 
 <!-- ── TOPBAR ── -->
 <header class="topbar">
@@ -246,10 +249,7 @@
   document.getElementById('hName').textContent = storedName.split(' ')[0];
   document.getElementById('av').textContent = storedName.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
 
-  function logout(){
-    ['isLoggedIn','userName','userEmail'].forEach(k=>localStorage.removeItem(k));
-    window.location.href='index.html';
-  }
+  async function logout(){ await DLAuth.signOut(); }
 
   /* ── CHATBOT ── */
   let chatOpen  = false;
