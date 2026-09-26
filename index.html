@@ -121,39 +121,85 @@
 
       <div class="meta">
         <label><input type="checkbox"/> Remember me</label>
-        <a class="forgot" href="#">Forgot password?</a>
+        <a class="forgot" href="#" id="forgotLink">Forgot password?</a>
       </div>
 
       <div class="err" id="errMsg">⚠ Please enter a valid email and password.</div>
       <button class="btn" id="loginBtn">Sign In →</button>
 
       <div class="divider">or</div>
-      <p class="reg">No account? <a href="#">Register here</a></p>
+      <p class="reg">No account? <a href="register.html">Register here</a></p>
       <div class="note">🔓 Open access — enter any valid email & password to continue</div>
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script src="auth.js"></script>
   <script>
     const btn = document.getElementById('loginBtn');
-    btn.addEventListener('click', login);
-    document.addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+    const err = document.getElementById('errMsg');
 
-    function login() {
-      const email = document.getElementById('email').value.trim();
-      const pass  = document.getElementById('password').value;
-      const err   = document.getElementById('errMsg');
-      err.classList.remove('show');
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || pass.length < 1) {
-        err.classList.add('show'); void err.offsetWidth; return;
-      }
-      const name = email.split('@')[0].replace(/[._\-]/g,' ')
-                   .replace(/\b\w/g, c => c.toUpperCase());
-      localStorage.setItem('isLoggedIn','true');
-      localStorage.setItem('userEmail', email);
-      localStorage.setItem('userName', name);
-      btn.textContent = 'Signing in…'; btn.classList.add('loading');
-      setTimeout(() => { window.location.href = 'DL_Homepage.html'; }, 600);
+    // If already signed in, go straight to the portal.
+    (async () => {
+      if (!window.DLAuth) return;
+      const session = await DLAuth.getSession();
+      if (session) window.location.href = 'DL_Homepage.html';
+    })();
+
+    btn.addEventListener('click', login);
+    document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+
+    function showError(message) {
+      err.textContent = '⚠ ' + message;
+      err.classList.add('show');
+      void err.offsetWidth;
     }
+
+    async function login() {
+      const email = document.getElementById('email').value.trim();
+      const pass = document.getElementById('password').value;
+      err.classList.remove('show');
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || pass.length < 6) {
+        showError('Enter a valid email and a password of at least 6 characters.');
+        return;
+      }
+
+      btn.textContent = 'Signing in…';
+      btn.classList.add('loading');
+      const { data, error } = await dlSupabase.auth.signInWithPassword({ email, password: pass });
+      if (error) {
+        btn.textContent = 'Sign In →';
+        btn.classList.remove('loading');
+        showError(error.message.includes('Email not confirmed')
+          ? 'Please verify your email address first.'
+          : 'Invalid email or password.');
+        return;
+      }
+
+      const params = new URLSearchParams(location.search);
+      const next = params.get('next');
+      window.location.href = next && /^[\w.-]+\.html$/.test(next) ? next : 'DL_Homepage.html';
+    }
+
+    document.getElementById('forgotLink').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showError('Enter your email address first, then tap Forgot password.');
+        return;
+      }
+      const redirectTo = `${window.location.origin}/reset-password.html`;
+      const { error } = await dlSupabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) showError(error.message);
+      else {
+        err.textContent = '✓ If an account exists for that email, a password reset link has been sent.';
+        err.style.color = '#277a45';
+        err.style.borderColor = 'rgba(39,122,69,.2)';
+        err.style.background = 'rgba(39,122,69,.07)';
+        err.classList.add('show');
+      }
+    });
   </script>
 </body>
 </html>
